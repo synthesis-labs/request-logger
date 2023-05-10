@@ -1,0 +1,23 @@
+datasource db {
+  provider = "postgresql"
+  url = "postgresql://user:password@host:port/database"
+}
+
+generator client {
+  // Prisma CLI, through prisma cli crate and available via /src/bin/prisma.rs & /.cargo/config.toml alias
+  provider = "cargo prisma"
+  // The location to generate the client. Is relative to the position of the schema
+  output   = "../src/prisma.rs"
+}
+
+model http_requests {
+  id              String   @id @default(cuid())
+  app             String   @default("")
+  time_generated  DateTime @default(now())
+  username        String   @default("")
+  request_time_ms Int
+  request_method  String   @default("")
+  request_uri     String   @default("")
+  request_body    String   @default("")
+  response_body   String   @default("")
+}

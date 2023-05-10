@@ -7,3 +7,6 @@ edition = "2021"
 
 [dependencies]
 rocket = { version = "0.5.0-rc.2", features = ["tls", "json"] }
+prisma-client-rust = { git = "https://github.com/Brendonovich/prisma-client-rust", tag = "0.6.8", default-features = false, features = ["postgresql"] }
+prisma-client-rust-cli = { git = "https://github.com/Brendonovich/prisma-client-rust", tag = "0.6.8", default-features = false, features = ["postgresql"] }
+serde = "1.0.162"
