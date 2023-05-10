@@ -14,6 +14,12 @@ use request_logger::request_timer::{RequestTimer};
 rocket::build().attach(RequestTimer).mount("/", routes![index])
 ```
 
+Updating the dependency within a project:
+
+```sh
+$ cargo update -p request-logger
+```
+
 # Database (Prisma)
 
 First define a model in `prisma/schema.prisma`
