@@ -1,33 +1,21 @@
 #[allow(warnings, unused)]
 mod prisma;
 
-use prisma::{http_requests, PrismaClient};
+use std::sync::Arc;
+
+use prisma::http_requests;
 use rocket::serde::json::Json;
 use serde::{Deserialize, Serialize};
 
 #[macro_use]
 extern crate rocket;
 
-// #[get("/")]
-// async fn index() -> &'static str {
-//   let client = PrismaClient::_builder().build().await.unwrap();
+#[derive(Clone)]
+pub struct Context {
+    pub db: Arc<prisma::PrismaClient>,
+}
 
-//   let _http_request: http_requests::Data = client
-//       .http_requests()
-//       .create(200, vec![
-//           http_requests::app::set("galactica".to_string()),
-//           http_requests::username::set("tjaard@synthesis.co.za".to_string()),
-//           http_requests::request_method::set("GET".to_string()),
-//           http_requests::request_uri::set("api/something".to_string()),
-//           // http_requests::request_body::set("galactica".to_string()),
-//           // http_requests::response_body::set("galactica".to_string()),
-//       ])
-//       .exec()
-//       .await
-//       .unwrap();
-
-//     "Ok"
-// }
+pub type Ctx = rocket::State<Context>;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MetricRequest {
@@ -41,11 +29,17 @@ pub struct MetricRequest {
     pub response_body: String,
 }
 
-#[post("/metric", data = "<input>")]
-async fn metric(input: Json<MetricRequest>) -> &'static str {
-    let client = PrismaClient::_builder().build().await.unwrap();
+#[get("/")]
+async fn index() -> &'static str {
+    "Ok"
+}
 
-    let _http_request: http_requests::Data = client
+#[post("/metric", data = "<input>")]
+async fn metric(input: Json<MetricRequest>, ctx: &Ctx) -> &'static str {
+    // let client = PrismaClient::_builder().build().await.unwrap();
+
+    let _http_request: http_requests::Data = ctx
+        .db
         .http_requests()
         .create(
             input.request_time_ms,
@@ -67,5 +61,13 @@ async fn metric(input: Json<MetricRequest>) -> &'static str {
 
 #[launch]
 async fn rocket() -> _ {
-    rocket::build().mount("/", routes![metric])
+    let db = Arc::new(
+        prisma::new_client()
+            .await
+            .expect("Failed to create Prisma client"),
+    );
+
+    rocket::build()
+        .manage(Context { db })
+        .mount("/", routes![index, metric])
 }
