@@ -1,13 +1,29 @@
-use std::time::SystemTime;
 use rocket::{
     fairing::{Fairing, Info, Kind},
     Data, Request, Response,
 };
+use std::time::SystemTime;
+
+use crate::models::{MetricRequest, MetricResponse};
 
 pub struct RequestLogger;
 
 #[derive(Copy, Clone)]
 struct TimerStart(Option<SystemTime>);
+
+async fn post_metric(metric: MetricRequest) -> Result<MetricResponse, reqwest::Error> {
+    let client = reqwest::Client::new();
+
+    let response = client
+        .post("request-logger.telemetry.svc.cluster.local")
+        .json(&metric)
+        .send()
+        .await?
+        .json::<MetricResponse>()
+        .await;
+
+    return response;
+}
 
 #[rocket::async_trait]
 impl Fairing for RequestLogger {
@@ -34,14 +50,15 @@ impl Fairing for RequestLogger {
                 request_method: req.method().to_string(),
                 request_uri: req.uri().to_string(),
                 request_body: "{}".to_owned(),
-                response_body: "{}".to_owned()
+                response_body: "{}".to_owned(),
             };
-        
-            let client = reqwest::Client::new();
-            let res = client.post("request-logger.telemetry.svc.cluster.local")
-                .json(&metric)
-                .send()
-                .await?;
+
+            let response = post_metric(metric.clone()).await;
+
+            match response {
+                Ok(_) => println!("request_logger: Successfully logged request"),
+                Err(err) => eprintln!("request_logger error: {err}"),
+            };
         }
     }
 }
