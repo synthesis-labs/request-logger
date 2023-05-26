@@ -16,3 +16,8 @@ pub struct MetricRequest {
 pub struct MetricResponse {
     pub error: String
 }
+
+pub struct RequestLoggerConfig {
+    pub api_url: String,
+    pub application_name: String
+}
