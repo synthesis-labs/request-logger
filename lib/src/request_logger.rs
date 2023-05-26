@@ -18,7 +18,7 @@ async fn post_metric(
     let client = reqwest::Client::new();
 
     let response = client
-        .post(api_url)
+        .post(format!("{api_url}/metric"))
         .json(&metric)
         .send()
         .await?
