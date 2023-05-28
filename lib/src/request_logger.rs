@@ -4,29 +4,12 @@ use rocket::{
     Data, Request, Response
 };
 
-use crate::models::{MetricRequest, MetricResponse, RequestLoggerConfig};
+use crate::models::{MetricRequest, RequestLoggerConfig};
 
 pub struct RequestLogger;
 
 #[derive(Copy, Clone)]
 struct TimerStart(Option<SystemTime>);
-
-async fn post_metric(
-    api_url: String,
-    metric: MetricRequest,
-) -> Result<MetricResponse, reqwest::Error> {
-    let client = reqwest::Client::new();
-
-    let response = client
-        .post(format!("{api_url}/metric"))
-        .json(&metric)
-        .send()
-        .await?
-        .json::<MetricResponse>()
-        .await;
-
-    return response;
-}
 
 #[rocket::async_trait]
 impl Fairing for RequestLogger {
@@ -42,7 +25,7 @@ impl Fairing for RequestLogger {
     }
 
     async fn on_response<'r>(&self, req: &'r Request<'_>, res: &mut Response<'r>) {
-        let default_config = RequestLoggerConfig {
+        let default_config: RequestLoggerConfig = RequestLoggerConfig {
             api_url: "request-logger.telemetry.svc.cluster.local".to_string(),
             application_name: "N/A".to_string(),
         };
@@ -62,16 +45,23 @@ impl Fairing for RequestLogger {
                 request_time_ms: ms,
                 request_method: req.method().to_string(),
                 request_uri: req.uri().to_string(),
-                request_body: "{}".to_string(),
-                response_body: "{}".to_string(),
             };
 
-            let response = post_metric(config.api_url.to_string(), metric.clone()).await;
+            let client = reqwest::Client::new();
 
+            let response = client
+                .post(format!("{}/metric", config.api_url))
+                .json(&metric)
+                .send()
+                .await;
+        
             match response {
-                Ok(_) => println!("request_logger: Successfully logged request"),
-                Err(err) => eprintln!("request_logger error: {err}"),
-            };
+                Ok(r) => match r.error_for_status() {
+                    Ok(d) => println!("request_logger: Successfully logged request"),
+                    Err(e) => eprintln!("request_logger error: {e}")
+                },
+                Err(e) => eprintln!("request_logger error: {e}")
+            }
         }
     }
 }
