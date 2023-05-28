@@ -18,6 +18,4 @@ model http_requests {
   request_time_ms Int
   request_method  String   @default("")
   request_uri     String   @default("")
-  request_body    String   @default("")
-  response_body   String   @default("")
 }

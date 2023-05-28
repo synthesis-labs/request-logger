@@ -2,9 +2,8 @@
 mod prisma;
 
 use std::sync::Arc;
-
-use prisma::http_requests;
-use rocket::serde::json::Json;
+use prisma::http_requests::{self};
+use rocket::{serde::json::Json, http::Status, response::status::{BadRequest, Accepted}};
 use serde::{Deserialize, Serialize};
 
 #[macro_use]
@@ -20,25 +19,20 @@ pub type Ctx = rocket::State<Context>;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MetricRequest {
     pub app: String,
-    // pub time_generated  : DateTime ,
     pub username: String,
     pub request_time_ms: i32,
     pub request_method: String,
     pub request_uri: String,
-    pub request_body: String,
-    pub response_body: String,
 }
 
 #[get("/")]
-async fn index() -> &'static str {
-    "Ok"
+async fn index() -> Status {
+    Status::Ok
 }
 
 #[post("/metric", data = "<input>")]
-async fn metric(input: Json<MetricRequest>, ctx: &Ctx) -> &'static str {
-    // let client = PrismaClient::_builder().build().await.unwrap();
-
-    let _http_request: http_requests::Data = ctx
+async fn metric(input: Json<MetricRequest>, ctx: &Ctx) -> Result<Accepted<()>, BadRequest<String>> {
+    let http_request = ctx
         .db
         .http_requests()
         .create(
@@ -48,15 +42,17 @@ async fn metric(input: Json<MetricRequest>, ctx: &Ctx) -> &'static str {
                 http_requests::username::set(input.username.clone()),
                 http_requests::request_method::set(input.request_method.clone()),
                 http_requests::request_uri::set(input.request_uri.clone()),
-                http_requests::request_body::set(input.request_body.clone()),
-                http_requests::response_body::set(input.response_body.clone()),
             ],
         )
         .exec()
-        .await
-        .unwrap();
+        .await;
 
-    "Lekker..."
+    let response = match http_request {
+        Ok(_) => Ok(Accepted(None)),
+        Err(e) => Err(BadRequest(Some(e.to_string()))),
+    };
+
+    response
 }
 
 #[launch]
