@@ -4,20 +4,26 @@ A Rust Rocket request logger [fairing (middleware)](https://rocket.rs/v0.5-rc/gu
 
 ```toml
 [dependencies]
-request-logger = { git = "https://github.com/synthesis-labs/request-logger.git" }
+request_logger_lib = { version = "0.2.0", git = "https://github.com/synthesis-labs/request-logger.git" }
 ```
 
 ```rust
-// use request_logger::request_logger::{RequestLogger};
-use request_logger::request_timer::{RequestTimer};
+use request_logger_lib::request_logger::{RequestLogger};
 ...
-rocket::build().attach(RequestTimer).mount("/", routes![index])
+rocket::build()
+    .manage(RequestLoggerConfig {
+        api_url: "http://request-logger.telemetry.svc.cluster.local".to_string(),
+        application_name: "<APP>".to_string()
+    })
+    .attach(RequestLogger)
+    .mount("/", routes![index])
+
 ```
 
 Updating the dependency within a project:
 
 ```sh
-$ cargo update -p request-logger
+$ cargo update -p request_logger_lib
 ```
 
 # Database (Prisma)
