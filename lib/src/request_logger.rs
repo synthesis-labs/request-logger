@@ -22,7 +22,7 @@ impl Fairing for RequestLogger {
 
     async fn on_ignite(&self, rocket: Rocket<Build>) -> fairing::Result {
         const VERSION: &str = env!("CARGO_PKG_VERSION");
-        println!("Request Logger v{}", VERSION);
+        println!("request_logger: v{}", VERSION);
         Ok(rocket)
     }
 
