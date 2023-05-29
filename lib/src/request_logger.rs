@@ -1,7 +1,7 @@
 use std::time::SystemTime;
 use rocket::{
-    fairing::{Fairing, Info, Kind},
-    Data, Request, Response
+    fairing::{Fairing, Info, Kind, self},
+    Data, Request, Response, Rocket, Build
 };
 
 use crate::models::{MetricRequest, RequestLoggerConfig};
@@ -16,8 +16,14 @@ impl Fairing for RequestLogger {
     fn info(&self) -> Info {
         Info {
             name: "Request Logger",
-            kind: Kind::Request | Kind::Response,
+            kind: Kind::Ignite | Kind::Request | Kind::Response,
         }
+    }
+
+    async fn on_ignite(&self, rocket: Rocket<Build>) -> fairing::Result {
+        const VERSION: &str = env!("CARGO_PKG_VERSION");
+        println!("Request Logger v{}", VERSION);
+        Ok(rocket)
     }
 
     async fn on_request(&self, request: &mut Request<'_>, _: &mut Data<'_>) {
@@ -57,7 +63,7 @@ impl Fairing for RequestLogger {
         
             match response {
                 Ok(r) => match r.error_for_status() {
-                    Ok(d) => println!("request_logger: Successfully logged request"),
+                    Ok(_) => println!("request_logger: Successfully logged request"),
                     Err(e) => eprintln!("request_logger error: {e}")
                 },
                 Err(e) => eprintln!("request_logger error: {e}")
