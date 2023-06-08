@@ -2,8 +2,8 @@
 mod prisma;
 
 use std::sync::Arc;
-use prisma::http_requests::{self};
-use rocket::{serde::json::Json, http::Status, response::status::{BadRequest, Accepted}};
+use prisma::{http_requests::{self}, http_request_data};
+use rocket::{serde::json::Json, http::{Status, self}, response::status::{BadRequest, Accepted}};
 use serde::{Deserialize, Serialize};
 
 #[macro_use]
@@ -23,6 +23,8 @@ pub struct MetricRequest {
     pub request_time_ms: i32,
     pub request_method: String,
     pub request_uri: String,
+    pub request_data_json: String,
+    pub response_data_json: String,
 }
 
 #[get("/")]
@@ -41,14 +43,28 @@ async fn metric(input: Json<MetricRequest>, ctx: &Ctx) -> Result<Accepted<()>, B
                 http_requests::app::set(input.app.clone()),
                 http_requests::username::set(input.username.clone()),
                 http_requests::request_method::set(input.request_method.clone()),
-                http_requests::request_uri::set(input.request_uri.clone()),
+                http_requests::request_uri::set(input.request_uri.clone())
             ],
         )
         .exec()
         .await;
 
     let response = match http_request {
-        Ok(_) => Ok(Accepted(None)),
+        Ok(_) => {
+            let _http_request_data = ctx
+                .db
+                .http_request_data()
+                .create(
+                    http_requests::id::equals(http_request.unwrap().id),
+                    vec![
+                        http_request_data::request_data_json::set(input.request_data_json.clone()),
+                        http_request_data::response_data_json::set(input.response_data_json.clone()),
+                    ]
+                )
+                .exec()
+                .await;
+            Ok(Accepted(None))
+        },
         Err(e) => Err(BadRequest(Some(e.to_string()))),
     };
 

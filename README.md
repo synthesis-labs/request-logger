@@ -63,3 +63,19 @@ $ cargo prisma migrate dev
 - Get JWT subject
 - Provide function to Fairing
 - Also pop to S3
+
+
+
+```sh
+# Gcloud CLI
+gcloud auth login
+
+# connecting to cluster
+
+# connecting to docker
+europe-west4-docker.pkg.dev
+
+gcloud auth configure-docker europe-west4-docker.pkg.dev
+docker build -t europe-west4-docker.pkg.dev/labs-371004/labs/request-logger:latest .
+docker push europe-west4-docker.pkg.dev/labs-371004/labs/request-logger:latest
+```

@@ -11,11 +11,20 @@ generator client {
 }
 
 model http_requests {
-  id              String   @id @default(cuid())
-  app             String   @default("")
-  time_generated  DateTime @default(now())
-  username        String   @default("")
-  request_time_ms Int
-  request_method  String   @default("")
-  request_uri     String   @default("")
+  id                String             @id @default(cuid())
+  app               String             @default("")
+  time_generated    DateTime           @default(now())
+  username          String             @default("")
+  request_time_ms   Int
+  request_method    String             @default("")
+  request_uri       String             @default("")
+  http_request_data http_request_data?
+}
+
+model http_request_data {
+  id                 String        @id @default(cuid())
+  request_data_json  String        @default("")
+  response_data_json String        @default("")
+  http_request       http_requests @relation(fields: [http_request_id], references: [id])
+  http_request_id    String        @unique
 }
